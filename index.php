@@ -27,12 +27,22 @@
                 key: key
             };
 
-            // Save data to local storage
-            localStorage.setItem('userData', JSON.stringify(data));
-
-            alert('Data saved successfully');
+            // Assuming you have a PHP script to handle the data on the server
+            fetch('/saveUserData.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     </script>
-    updated
 </body>
 </html>
