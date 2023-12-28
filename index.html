@@ -27,52 +27,11 @@
                 key: key
             };
 
-            // Assuming you are using Fetch API to send data to the server
-            fetch('/saveUserData', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                alert(result.message);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+            // Save data to local storage
+            localStorage.setItem('userData', JSON.stringify(data));
+
+            alert('Data saved successfully');
         }
-    </script>
-
-    <script>
-        const express = require('express');
-        const bodyParser = require('body-parser');
-        const fs = require('fs');
-
-        const app = express();
-        const port = 3000;
-
-        app.use(bodyParser.json());
-
-        app.post('/saveUserData', (req, res) => {
-            const data = req.body;
-            const userData = `${data.username}:${data.key};\n`;
-
-            // Assuming 'data.json' is the file where you want to store user data
-            fs.appendFile('data.json', userData, (err) => {
-                if (err) {
-                    console.error(err);
-                    res.status(500).json({ message: 'Internal Server Error' });
-                } else {
-                    res.json({ message: 'Data saved successfully' });
-                }
-            });
-        });
-
-        app.listen(port, () => {
-            console.log(`Server is running at http://localhost:${port}`);
-        });
     </script>
 </body>
 </html>
