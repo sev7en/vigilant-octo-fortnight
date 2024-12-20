@@ -1,0 +1,65 @@
+name: Update NIP-05 JSON
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Every 6 hours
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install gspread oauth2client
+
+    - name: Update nostr.json
+      env:
+        GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+        SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+      run: |
+        python - << EOF
+        import json
+        import gspread
+        from oauth2client.service_account import ServiceAccountCredentials
+
+        # Use this JSON string for Google Sheets API credentials
+        credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+            json.loads('${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}'),
+            ['https://spreadsheets.google.com/feeds',
+             'https://www.googleapis.com/auth/drive'])
+
+        gc = gspread.authorize(credentials)
+        worksheet = gc.open_by_key('${{ secrets.SPREADSHEET_ID }}').sheet1
+
+        # Read all data from the sheet
+        all_values = worksheet.get_all_values()
+        # Assuming the first row is a header
+        data = {row[0]: row[1] for row in all_values[1:]}
+
+        # Read existing data or create an empty dict
+        try:
+            with open('.well-known/nostr.json', 'r') as json_file:
+                existing_data = json.load(json_file)
+        except FileNotFoundError:
+            existing_data = {'names': {}}
+
+        # Update or add new entries
+        existing_data['names'].update(data)
+
+        # Write back to the file
+        with open('.well-known/nostr.json', 'w') as json_file:
+            json.dump(existing_data, json_file, indent=2)
+        EOF
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Update nostr.json with new NIP-05 entries
+        file_pattern: .well-known/nostr.json
